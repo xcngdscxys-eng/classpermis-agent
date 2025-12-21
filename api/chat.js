@@ -1,99 +1,133 @@
 export default function handler(req, res) {
-  try {
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
+  // 🔐 CORS (à restreindre à ton domaine Medusa en prod)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-    const body = req.body || {};
-    const message = body.message;
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  try {
+    const { message, state } = req.body || {};
 
     if (!message || typeof message !== "string") {
       return res.status(200).json({
         reply:
-          "Pouvez-vous reformuler votre question concernant le permis ou l’inscription ?"
+          "Pouvez-vous préciser votre demande concernant le permis de conduire ?",
+        state: null,
       });
     }
 
-    const text = message.toLowerCase();
+    // 🔹 Normalisation simple
+    const text = message
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
 
-    // 🔹 CPF (très spécifique)
-    if (text.includes("cpf") || text.includes("compte formation")) {
+    // 🧠 SCÉNARIO GUIDÉ — PERMIS
+    const scenario = {
+      start: {
+        reply:
+          "Souhaitez-vous passer le permis en boîte automatique ou manuelle ?",
+        options: {
+          automatique: "auto",
+          manuelle: "manuel",
+        },
+      },
+
+      auto: {
+        reply:
+          "Très bien. Souhaitez-vous passer le permis en boîte automatique avec ou sans le code ?",
+        options: {
+          "avec code": "auto_avec_code",
+          "sans code": "auto_sans_code",
+        },
+      },
+
+      auto_avec_code: {
+        reply:
+          "Parfait. Souhaitez-vous être rappelé pour un devis personnalisé ou consulter nos offres en ligne ?",
+        end: true,
+      },
+
+      auto_sans_code: {
+        reply:
+          "Très bien. Souhaitez-vous être rappelé par l’auto-école pour finaliser votre inscription ?",
+        end: true,
+      },
+
+      manuel: {
+        reply:
+          "Très bien. Souhaitez-vous passer le permis en boîte manuelle avec ou sans le code ?",
+        options: {
+          "avec code": "manuel_avec_code",
+          "sans code": "manuel_sans_code",
+        },
+      },
+
+      manuel_avec_code: {
+        reply:
+          "Parfait. Souhaitez-vous être rappelé pour un devis personnalisé ou consulter nos offres ?",
+        end: true,
+      },
+
+      manuel_sans_code: {
+        reply:
+          "Très bien. Souhaitez-vous être rappelé par l’auto-école pour finaliser votre inscription ?",
+        end: true,
+      },
+    };
+
+    // ▶️ Démarrage du scénario
+    if (!state) {
+      return res.status(200).json({
+        reply: scenario.start.reply,
+        state: "start",
+      });
+    }
+
+    const currentStep = scenario[state];
+
+    if (!currentStep) {
       return res.status(200).json({
         reply:
-          "Oui, la formation est finançable via le CPF sous conditions. Souhaitez-vous que l’on vérifie votre éligibilité ?"
+          "Souhaitez-vous être rappelé par l’auto-école ou poser une autre question ?",
+        state: null,
       });
     }
 
-    // 🔹 Tarifs
-    if (
-      text.includes("prix") ||
-      text.includes("tarif") ||
-      text.includes("coût")
-    ) {
-      return res.status(200).json({
-        reply:
-          "Vous pouvez consulter nos tarifs directement sur la page Tarifs du site Class’Permis. Souhaitez-vous un conseil personnalisé ?"
-      });
+    // 🔁 Gestion des transitions
+    if (currentStep.options) {
+      for (const keyword in currentStep.options) {
+        if (text.includes(keyword)) {
+          const nextState = currentStep.options[keyword];
+          const nextStep = scenario[nextState];
+
+          return res.status(200).json({
+            reply: nextStep.reply,
+            state: nextStep.end ? null : nextState,
+          });
+        }
+      }
     }
 
-    // 🔹 Documents
-    if (
-      text.includes("document") ||
-      text.includes("pièce") ||
-      text.includes("inscription")
-    ) {
-      return res.status(200).json({
-        reply:
-          "Les pièces à fournir sont généralement : pièce d’identité, justificatif de domicile, photos e-photo, ASSR2 (si concerné) et JDC selon l’âge. Certaines inscriptions ont des particularités."
-      });
-    }
-
-    // 🔹 Permis automatique
-    if (text.includes("automatique")) {
-      return res.status(200).json({
-        reply:
-          "Très bien. Souhaitez-vous passer le permis en boîte automatique avec ou sans le code ?"
-      });
-    }
-
-    // 🔹 Permis manuel
-    if (text.includes("manuel")) {
-      return res.status(200).json({
-        reply:
-          "Très bien. Souhaitez-vous passer le permis en boîte manuelle avec ou sans le code ?"
-      });
-    }
-
-    // 🔹 Demande générale sur le permis (PLUS GÉNÉRAL)
-    if (text.includes("permis")) {
-      return res.status(200).json({
-        reply:
-          "Souhaitez-vous passer le permis en boîte automatique ou manuelle ?"
-      });
-    }
-
-    // 🔹 Contact / rappel
-    if (
-      text.includes("contact") ||
-      text.includes("rappel") ||
-      text.includes("téléphone") ||
-      text.includes("telephone")
-    ) {
-      return res.status(200).json({
-        reply:
-          "Souhaitez-vous être rappelé par l’auto-école ou préférez-vous nous contacter via le formulaire du site ?"
-      });
-    }
-
-    // 🔹 Fallback final
+    // ❌ Réponse non comprise → on repose la même question
     return res.status(200).json({
-      reply:
-        "Je n’ai pas encore cette information. Souhaitez-vous être rappelé par l’auto-école ou poser une autre question ?"
+      reply: currentStep.reply,
+      state,
     });
   } catch (error) {
     return res.status(200).json({
       reply:
-        "Une erreur est survenue. Vous pouvez nous contacter directement via le site Class’Permis."
+        "Une erreur est survenue. Vous pouvez nous contacter directement via le site Class’Permis.",
+      state: null,
     });
   }
 }
