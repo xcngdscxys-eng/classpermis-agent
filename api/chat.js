@@ -155,20 +155,46 @@ next: "ask_phone"
       });
     }
 
-    // 🔁 Gestion des transitions
-    if (currentStep.options) {
-      for (const keyword in currentStep.options) {
-        if (text.includes(keyword)) {
-          const nextState = currentStep.options[keyword];
-          const nextStep = scenario[nextState];
+// 📱 Étape spéciale : attente du téléphone
+if (currentStep.expectPhone) {
+  const phone = text.replace(/\s/g, "");
 
-          return res.status(200).json({
-            reply: nextStep.reply,
-            state: nextStep.end ? null : nextState,
-          });
-        }
-      }
+  const isPhoneValid =
+    phone.match(/^(\+33|0)[1-9]\d{8}$/);
+
+  if (!isPhoneValid) {
+    return res.status(200).json({
+      reply:
+        "Le numéro ne semble pas correct. Pouvez-vous réessayer avec un numéro valide ?",
+      state,
+    });
+  }
+
+  // ✅ ICI tu récupères le numéro
+  console.log("📞 Nouveau lead téléphone :", phone);
+
+  return res.status(200).json({
+    reply: scenario.phone_received.reply,
+    state: null,
+    phone, // ← envoyé à Medusa
+  });
+}
+
+// 🔁 Transitions normales
+if (currentStep.options) {
+  for (const keyword in currentStep.options) {
+    if (text.includes(keyword)) {
+      const nextState = currentStep.options[keyword];
+      const nextStep = scenario[nextState];
+
+      return res.status(200).json({
+        reply: nextStep.reply,
+        state: nextStep.next ? nextStep.next : nextState,
+      });
     }
+  }
+}
+}
 
     // ❌ Réponse non comprise → on repose la même question
     return res.status(200).json({
