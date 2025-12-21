@@ -1,55 +1,40 @@
 export default function handler(req, res) {
-  // 🔐 CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST")
+  if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
 
   try {
-    const { message, state } = req.body || {};
+    const body = req.body || {};
+    const message = body.message;
+    const state = body.state || null;
 
     if (!message || typeof message !== "string") {
       return res.status(200).json({
-        reply:
-          "Pouvez-vous préciser votre demande concernant le permis de conduire ?",
-        state: null,
+        reply: "Que souhaitez-vous faire ? permis / tarifs / cpf / contact",
+        state: "start",
       });
     }
 
-    const text = message
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
+    const text = message.toLowerCase();
 
-    // 🧠 SCÉNARIO GUIDÉ
     const scenario = {
       start: {
-        reply:
-          "Bonjour 👋 Que souhaitez-vous faire ?\n\n" +
-          "1️⃣ Passer le permis\n" +
-          "2️⃣ Consulter les tarifs\n" +
-          "3️⃣ Financement CPF\n" +
-          "4️⃣ Être rappelé par l’auto-école",
+        reply: "Que souhaitez-vous faire ? permis / tarifs / cpf / contact",
         options: {
           permis: "permis",
-          "passer le permis": "permis",
-          tarif: "tarifs",
           tarifs: "tarifs",
           cpf: "cpf",
-          financement: "cpf",
-          rappel: "contact",
-          appeler: "contact",
+          contact: "contact",
         },
       },
 
       permis: {
-        reply:
-          "Souhaitez-vous passer le permis en boîte automatique ou manuelle ?",
+        reply: "Boite automatique ou manuelle ?",
         options: {
           automatique: "auto",
           manuelle: "manuel",
@@ -57,79 +42,48 @@ export default function handler(req, res) {
       },
 
       auto: {
-        reply:
-          "Très bien. Souhaitez-vous passer le permis en boîte automatique avec ou sans le code ?",
+        reply: "Avec code ou sans code ?",
         options: {
-          "avec code": "auto_avec_code",
-          "sans code": "auto_sans_code",
+          "avec code": "ask_phone",
+          "sans code": "ask_phone",
         },
-      },
-
-      auto_avec_code: {
-        reply:
-          "Parfait 👍 Souhaitez-vous être rappelé pour un devis personnalisé ou consulter nos offres en ligne ?",
-        next: "ask_phone",
-      },
-
-      auto_sans_code: {
-        reply:
-          "Très bien 👍 Souhaitez-vous être rappelé par l’auto-école pour finaliser votre inscription ?",
-        next: "ask_phone",
       },
 
       manuel: {
-        reply:
-          "Très bien. Souhaitez-vous passer le permis en boîte manuelle avec ou sans le code ?",
+        reply: "Avec code ou sans code ?",
         options: {
-          "avec code": "manuel_avec_code",
-          "sans code": "manuel_sans_code",
+          "avec code": "ask_phone",
+          "sans code": "ask_phone",
         },
       },
 
-      manuel_avec_code: {
-        reply:
-          "Parfait 👍 Souhaitez-vous être rappelé pour un devis personnalisé ou consulter nos offres ?",
-        next: "ask_phone",
-      },
-
-      manuel_sans_code: {
-        reply:
-          "Très bien 👍 Souhaitez-vous être rappelé par l’auto-école pour finaliser votre inscription ?",
-        next: "ask_phone",
-      },
-
-      // 📱 DEMANDE DE TÉLÉPHONE
-      ask_phone: {
-        reply:
-          "Parfait 👍 Pouvez-vous me communiquer votre numéro de téléphone pour qu’un conseiller Class’Permis vous rappelle ?",
-        expectPhone: true,
-      },
-
-      phone_received: {
-        reply:
-          "Merci 😊 Un conseiller Class’Permis vous contactera très rapidement.",
-      },
-
       tarifs: {
-        reply:
-          "Vous pouvez consulter nos tarifs directement sur le site Class’Permis.\n\nSouhaitez-vous être rappelé pour un conseil personnalisé ?",
-        next: "ask_phone",
+        reply: "Consultez les tarifs sur le site. Souhaitez-vous etre rappele ?",
+        options: {
+          oui: "ask_phone",
+        },
       },
 
       cpf: {
-        reply:
-          "Oui, la formation est finançable via le CPF sous conditions.\n\nSouhaitez-vous que l’on vérifie votre éligibilité par téléphone ?",
-        next: "ask_phone",
+        reply: "Formation CPF possible. Souhaitez-vous etre rappele ?",
+        options: {
+          oui: "ask_phone",
+        },
       },
 
       contact: {
-        reply:
-          "Très bien 👍 Souhaitez-vous être rappelé par l’auto-école ?",
-        next: "ask_phone",
+        reply: "Souhaitez-vous etre rappele ?",
+        options: {
+          oui: "ask_phone",
+        },
+      },
+
+      ask_phone: {
+        reply: "Merci de saisir votre numero de telephone",
+        expectPhone: true,
       },
     };
 
-    // ▶️ Début
     if (!state) {
       return res.status(200).json({
         reply: scenario.start.reply,
@@ -137,61 +91,49 @@ export default function handler(req, res) {
       });
     }
 
-    const currentStep = scenario[state];
-    if (!currentStep) {
+    const step = scenario[state];
+
+    if (!step) {
       return res.status(200).json({
-        reply:
-          "Souhaitez-vous être rappelé par l’auto-école ou poser une autre question ?",
-        state: null,
+        reply: scenario.start.reply,
+        state: "start",
       });
     }
 
-    // 📱 Téléphone
-    if (currentStep.expectPhone) {
+    if (step.expectPhone) {
       const phone = text.replace(/\s/g, "");
-      const isPhoneValid = phone.match(/^(\+33|0)[1-9]\d{8}$/);
-
-      if (!isPhoneValid) {
+      if (!/^(\+33|0)[1-9]\d{8}$/.test(phone)) {
         return res.status(200).json({
-          reply:
-            "Le numéro ne semble pas correct. Pouvez-vous réessayer avec un numéro valide ?",
+          reply: "Numero incorrect. Reessayez.",
           state,
         });
       }
 
-      console.log("📞 Nouveau lead :", phone);
-
       return res.status(200).json({
-        reply: scenario.phone_received.reply,
+        reply: "Merci. Nous vous rappelons rapidement.",
         state: null,
         phone,
       });
     }
 
-    // 🔁 Transitions
-    if (currentStep.options) {
-      for (const keyword in currentStep.options) {
-        if (text.includes(keyword)) {
-          const nextState = currentStep.options[keyword];
-          const nextStep = scenario[nextState];
-
+    if (step.options) {
+      for (const key in step.options) {
+        if (text.includes(key)) {
           return res.status(200).json({
-            reply: nextStep.reply,
-            state: nextStep.next || nextState,
+            reply: scenario[step.options[key]].reply,
+            state: step.options[key],
           });
         }
       }
     }
 
     return res.status(200).json({
-      reply: currentStep.reply,
+      reply: step.reply,
       state,
     });
-  } catch (error) {
-    return res.status(200).json({
-      reply:
-        "Une erreur est survenue. Vous pouvez nous contacter directement via le site Class’Permis.",
-      state: null,
+  } catch (e) {
+    return res.status(500).json({
+      reply: "Erreur serveur",
     });
   }
 }
