@@ -1,7 +1,7 @@
 import { OpenAI } from "openai";
-import { intents } from "../data/intents";
-import { faq } from "../data/faq";
-import { flows } from "../data/flows";
+import { intents } from "../data/intents.js";
+import { faq } from "../data/faq.js";
+import { flows } from "../data/flows.js";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
