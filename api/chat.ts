@@ -1,11 +1,8 @@
-import { OpenAI } from "openai";
+
 import { intents } from "../data/intents";
 import { faq } from "../data/faq";
 import { flows } from "../data/flows";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
