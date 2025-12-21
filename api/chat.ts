@@ -33,27 +33,9 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  // 2️⃣ Fallback IA (cas rare)
-  try {
-    const completion = await client.chat.completions.create({
-      model: "gpt-4.1-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "Tu es l’assistant officiel de l’auto-école Class’Permis. Réponds de façon claire, professionnelle, concise. N’invente jamais de tarifs ou de règles."
-        },
-        {
-          role: "user",
-          content: message
-        }
-      ],
-      max_tokens: 300
-    });
+// Fallback sans IA (mode local uniquement)
+return res.status(200).json({
+  reply:
+    "Je n’ai pas encore cette information. Souhaitez-vous être rappelé par l’auto-école ou poser une autre question ?"
+});
 
-    const reply = completion.choices[0].message.content;
-    return res.status(200).json({ reply });
-  } catch (error) {
-    return res.status(500).json({ error: "Erreur IA" });
-  }
-}
