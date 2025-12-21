@@ -74,13 +74,13 @@ const scenario = {
   auto_avec_code: {
     reply:
       "Parfait 👍 Souhaitez-vous être rappelé pour un devis personnalisé ou consulter nos offres en ligne ?",
-    end: true,
+    next: "ask_phone"
   },
 
   auto_sans_code: {
     reply:
       "Très bien 👍 Souhaitez-vous être rappelé par l’auto-école pour finaliser votre inscription ?",
-    end: true,
+    next: "ask_phone"
   },
 
   manuel: {
@@ -95,34 +95,45 @@ const scenario = {
   manuel_avec_code: {
     reply:
       "Parfait 👍 Souhaitez-vous être rappelé pour un devis personnalisé ou consulter nos offres ?",
-    end: true,
+    next: "ask_phone"
   },
 
   manuel_sans_code: {
     reply:
       "Très bien 👍 Souhaitez-vous être rappelé par l’auto-école pour finaliser votre inscription ?",
-    end: true,
+    next: "ask_phone"
+      // 📱 DEMANDE DE TÉLÉPHONE
+  ask_phone: {
+    reply:
+      "Parfait 👍 Pouvez-vous me communiquer votre numéro de téléphone pour qu’un conseiller Class’Permis vous rappelle ?",
+    expectPhone: true,
+  },
+
+  phone_received: {
+    reply:
+      "Merci 😊 Un conseiller Class’Permis vous contactera très rapidement.",
+    next: "ask_phone"
   },
 
   // 💰 TARIFS
   tarifs: {
     reply:
       "Vous pouvez consulter nos tarifs directement sur le site Class’Permis.\n\nSouhaitez-vous également être rappelé pour un conseil personnalisé ?",
-    end: true,
+    next: "ask_phone"
   },
 
   // 🎓 CPF
   cpf: {
     reply:
       "Oui, la formation est finançable via le CPF sous conditions.\n\nSouhaitez-vous que l’on vérifie votre éligibilité par téléphone ?",
-    end: true,
+next: "ask_phone"
   },
 
   // 📞 CONTACT
   contact: {
     reply:
       "Très bien 👍 Souhaitez-vous être rappelé par l’auto-école ?",
-    end: true,
+    next: "ask_phone"
   },
 };
 
