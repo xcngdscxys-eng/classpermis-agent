@@ -31,59 +31,100 @@ export default function handler(req, res) {
       .replace(/\s+/g, " ")
       .trim();
 
-    // 🧠 SCÉNARIO GUIDÉ — PERMIS
-    const scenario = {
-      start: {
-        reply:
-          "Souhaitez-vous passer le permis en boîte automatique ou manuelle ?",
-        options: {
-          automatique: "auto",
-          manuelle: "manuel",
-        },
-      },
+  // 🧠 SCÉNARIO GUIDÉ — MENU DE DÉPART
+const scenario = {
+  start: {
+    reply:
+      "Bonjour 👋 Que souhaitez-vous faire ?\n\n" +
+      "1️⃣ Passer le permis\n" +
+      "2️⃣ Consulter les tarifs\n" +
+      "3️⃣ Financement CPF\n" +
+      "4️⃣ Être rappelé par l’auto-école",
+    options: {
+      permis: "permis",
+      "passer le permis": "permis",
+      tarif: "tarifs",
+      tarifs: "tarifs",
+      cpf: "cpf",
+      financement: "cpf",
+      rappel: "contact",
+      appeler: "contact",
+    },
+  },
 
-      auto: {
-        reply:
-          "Très bien. Souhaitez-vous passer le permis en boîte automatique avec ou sans le code ?",
-        options: {
-          "avec code": "auto_avec_code",
-          "sans code": "auto_sans_code",
-        },
-      },
+  // 🚗 PERMIS
+  permis: {
+    reply:
+      "Souhaitez-vous passer le permis en boîte automatique ou manuelle ?",
+    options: {
+      automatique: "auto",
+      manuelle: "manuel",
+    },
+  },
 
-      auto_avec_code: {
-        reply:
-          "Parfait. Souhaitez-vous être rappelé pour un devis personnalisé ou consulter nos offres en ligne ?",
-        end: true,
-      },
+  auto: {
+    reply:
+      "Très bien. Souhaitez-vous passer le permis en boîte automatique avec ou sans le code ?",
+    options: {
+      "avec code": "auto_avec_code",
+      "sans code": "auto_sans_code",
+    },
+  },
 
-      auto_sans_code: {
-        reply:
-          "Très bien. Souhaitez-vous être rappelé par l’auto-école pour finaliser votre inscription ?",
-        end: true,
-      },
+  auto_avec_code: {
+    reply:
+      "Parfait 👍 Souhaitez-vous être rappelé pour un devis personnalisé ou consulter nos offres en ligne ?",
+    end: true,
+  },
 
-      manuel: {
-        reply:
-          "Très bien. Souhaitez-vous passer le permis en boîte manuelle avec ou sans le code ?",
-        options: {
-          "avec code": "manuel_avec_code",
-          "sans code": "manuel_sans_code",
-        },
-      },
+  auto_sans_code: {
+    reply:
+      "Très bien 👍 Souhaitez-vous être rappelé par l’auto-école pour finaliser votre inscription ?",
+    end: true,
+  },
 
-      manuel_avec_code: {
-        reply:
-          "Parfait. Souhaitez-vous être rappelé pour un devis personnalisé ou consulter nos offres ?",
-        end: true,
-      },
+  manuel: {
+    reply:
+      "Très bien. Souhaitez-vous passer le permis en boîte manuelle avec ou sans le code ?",
+    options: {
+      "avec code": "manuel_avec_code",
+      "sans code": "manuel_sans_code",
+    },
+  },
 
-      manuel_sans_code: {
-        reply:
-          "Très bien. Souhaitez-vous être rappelé par l’auto-école pour finaliser votre inscription ?",
-        end: true,
-      },
-    };
+  manuel_avec_code: {
+    reply:
+      "Parfait 👍 Souhaitez-vous être rappelé pour un devis personnalisé ou consulter nos offres ?",
+    end: true,
+  },
+
+  manuel_sans_code: {
+    reply:
+      "Très bien 👍 Souhaitez-vous être rappelé par l’auto-école pour finaliser votre inscription ?",
+    end: true,
+  },
+
+  // 💰 TARIFS
+  tarifs: {
+    reply:
+      "Vous pouvez consulter nos tarifs directement sur le site Class’Permis.\n\nSouhaitez-vous également être rappelé pour un conseil personnalisé ?",
+    end: true,
+  },
+
+  // 🎓 CPF
+  cpf: {
+    reply:
+      "Oui, la formation est finançable via le CPF sous conditions.\n\nSouhaitez-vous que l’on vérifie votre éligibilité par téléphone ?",
+    end: true,
+  },
+
+  // 📞 CONTACT
+  contact: {
+    reply:
+      "Très bien 👍 Souhaitez-vous être rappelé par l’auto-école ?",
+    end: true,
+  },
+};
 
     // ▶️ Démarrage du scénario
     if (!state) {
